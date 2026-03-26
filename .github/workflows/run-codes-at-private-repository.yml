@@ -1,0 +1,40 @@
+name: run codes at private repository
+
+on:
+  schedule:
+    - cron: '30 13 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    env:
+      REPO: https://github.com/SunYufei/bot.git
+      BRANCH: job
+      CODE_PATH: job
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Clone codes from private repository
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GH_TOKEN }}@github.com".insteadOf "https://github.com"
+          git clone $REPO $CODE_PATH -b $BRANCH
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+      - name: Install requirements
+        run: |
+          pip install --upgrade pip
+          pip install -r $CODE_PATH/requirements.txt
+      - name: Run codes
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.CHAT_ID }}
+          #
+          FUND_CODE_LIST: ${{ secrets.FUND_CODE_LIST }}
+          FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+        run: |
+          cd $CODE_PATH
+          python main.py
